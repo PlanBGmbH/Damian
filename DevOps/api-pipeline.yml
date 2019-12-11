@@ -1,0 +1,41 @@
+pool:
+  name: Azure Pipelines
+steps:
+- task: DownloadGitHubRelease@0
+  displayName: 'Download GitHub Release'
+  inputs:
+    connection: 'Generic Github Connection'
+    userRepository: 'Azure/azure-api-management-devops-resource-kit'
+    defaultVersionType: specificTag
+    version: 'v0.3-gamma'
+    downloadPath: '$(System.DefaultWorkingDirectory)'
+
+- powershell: |
+   Expand-Archive -LiteralPath "res-kit-win64.zip" -DestinationPath "azure-api-management-devops-resource-kit"
+   
+   ls
+  displayName: 'PowerShell Script'
+
+- task: CopyFiles@2
+  displayName: 'Copy Files to destination'
+  inputs:
+    SourceFolder: Templates
+    TargetFolder: 'azure-api-management-devops-resource-kit/res-kit-win64'
+    OverWrite: true
+
+- task: AzureCLI@2
+  displayName: 'Azure CLI '
+  inputs:
+    azureSubscription: ''
+    scriptType: ps
+    scriptLocation: inlineScript
+    inlineScript: '.\apimtemplate.exe extract'
+    addSpnToEnvironment: true
+    workingDirectory: 'azure-api-management-devops-resource-kit/res-kit-win64'
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Pipeline Artifact'
+  inputs:
+    targetPath: 'azure-api-management-devops-resource-kit/res-kit-win64/output'
+    artifact: apitemplates
+
